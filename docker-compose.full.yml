@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: code-rag-opensearch
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=Admin123!
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: code-rag-api
+    environment:
+      - OPENSEARCH_HOST=http://opensearch:9200
+      - EMBEDDING_PROVIDER=local
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config:/app/config
+      - ./repos:/app/repos:ro  # Mount your repositories folder
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    command: bun run start
+
+  ui:
+    build: .
+    container_name: code-rag-ui
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+    command: sh -c "cd ui && bun run dev --host"
+
+volumes:
+  opensearch-data:

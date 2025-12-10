@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "bun run --watch src/index.ts",
     "dev:mcp": "bun run --watch src/mcp-server.ts",
+    "dev:ui": "cd ui && bun run dev",
     "start": "bun run src/index.ts",
     "start:mcp": "bun run src/mcp-server.ts",
+    "build:ui": "cd ui && bun run build",
     "setup-index": "bun run src/scripts/setup-index.ts",
     "ingest": "bun run src/scripts/ingest.ts",
     "test": "bun test"

@@ -6,19 +6,19 @@ opensearch:
     password: "${OPENSEARCH_PASSWORD:-admin}"
 
 embedding:
-  provider: "${EMBEDDING_PROVIDER:-openai}"
+  provider: "${EMBEDDING_PROVIDER:-local}"
 
   openai:
-    apiKey: "${OPENAI_API_KEY}"
+    apiKey: "${OPENAI_API_KEY:-placeholder}"
     baseUrl: "${OPENAI_BASE_URL:-https://api.openai.com/v1}"
     model: "${OPENAI_MODEL:-text-embedding-ada-002}"
     dimension: 1536
     batchSize: 100
 
   azure:
-    apiKey: "${AZURE_OPENAI_API_KEY}"
-    endpoint: "${AZURE_OPENAI_ENDPOINT}"
-    deployment: "${AZURE_OPENAI_DEPLOYMENT}"
+    apiKey: "${AZURE_OPENAI_API_KEY:-placeholder}"
+    endpoint: "${AZURE_OPENAI_ENDPOINT:-https://placeholder.openai.azure.com}"
+    deployment: "${AZURE_OPENAI_DEPLOYMENT:-placeholder}"
     apiVersion: "${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}"
     dimension: 1536
     batchSize: 100
