@@ -1,5 +1,5 @@
 import Parser from "web-tree-sitter";
-import { resolve, dirname } from "path";
+import { resolve } from "path";
 import type { Language, ParsedSymbol } from "../../models/types.js";
 import type { Parser as IParser } from "./base-parser.js";
 
@@ -15,19 +15,13 @@ async function initParser(): Promise<Parser> {
   await Parser.init();
   parserInstance = new Parser();
 
-  // Load Python grammar
+  // Load Python grammar from tree-sitter-wasms package
   const wasmPath = resolve(
-    dirname(import.meta.path),
-    "../../../node_modules/web-tree-sitter-languages/tree-sitter-python.wasm"
+    process.cwd(),
+    "node_modules/tree-sitter-wasms/out/tree-sitter-python.wasm"
   );
 
-  try {
-    pythonLanguage = await Parser.Language.load(wasmPath);
-  } catch {
-    // Fallback: try loading from different location
-    const altPath = resolve(process.cwd(), "node_modules/tree-sitter-python/tree-sitter-python.wasm");
-    pythonLanguage = await Parser.Language.load(altPath);
-  }
+  pythonLanguage = await Parser.Language.load(wasmPath);
 
   return parserInstance;
 }

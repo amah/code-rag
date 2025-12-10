@@ -1,5 +1,5 @@
 import Parser from "web-tree-sitter";
-import { resolve, dirname } from "path";
+import { resolve } from "path";
 import type { Language, ParsedSymbol, SymbolType } from "../../models/types.js";
 import type { Parser as IParser } from "./base-parser.js";
 
@@ -16,19 +16,20 @@ async function initParser(): Promise<Parser> {
   await Parser.init();
   parserInstance = new Parser();
 
-  // Load TypeScript grammar
+  // Load TypeScript grammar from tree-sitter-wasms package
   const wasmPath = resolve(
-    dirname(import.meta.path),
-    "../../../node_modules/web-tree-sitter-languages/tree-sitter-typescript.wasm"
+    process.cwd(),
+    "node_modules/tree-sitter-wasms/out/tree-sitter-typescript.wasm"
   );
 
-  try {
-    typescriptLanguage = await Parser.Language.load(wasmPath);
-  } catch {
-    // Fallback: try loading from different location
-    const altPath = resolve(process.cwd(), "node_modules/tree-sitter-typescript/tree-sitter-typescript.wasm");
-    typescriptLanguage = await Parser.Language.load(altPath);
-  }
+  typescriptLanguage = await Parser.Language.load(wasmPath);
+
+  // Also load TSX grammar for React files
+  const tsxWasmPath = resolve(
+    process.cwd(),
+    "node_modules/tree-sitter-wasms/out/tree-sitter-tsx.wasm"
+  );
+  tsxLanguage = await Parser.Language.load(tsxWasmPath);
 
   return parserInstance;
 }
