@@ -1,0 +1,70 @@
+opensearch:
+  url: "${OPENSEARCH_URL:-https://localhost:9200}"
+  index: "${OPENSEARCH_INDEX:-code_chunks}"
+  auth:
+    username: "${OPENSEARCH_USERNAME:-admin}"
+    password: "${OPENSEARCH_PASSWORD:-admin}"
+
+embedding:
+  provider: "${EMBEDDING_PROVIDER:-openai}"
+
+  openai:
+    apiKey: "${OPENAI_API_KEY}"
+    baseUrl: "${OPENAI_BASE_URL:-https://api.openai.com/v1}"
+    model: "${OPENAI_MODEL:-text-embedding-ada-002}"
+    dimension: 1536
+    batchSize: 100
+
+  azure:
+    apiKey: "${AZURE_OPENAI_API_KEY}"
+    endpoint: "${AZURE_OPENAI_ENDPOINT}"
+    deployment: "${AZURE_OPENAI_DEPLOYMENT}"
+    apiVersion: "${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}"
+    dimension: 1536
+    batchSize: 100
+
+  local:
+    model: "${LOCAL_MODEL_NAME:-Xenova/all-MiniLM-L6-v2}"
+    dimension: 384
+    batchSize: 32
+    cacheDir: "${LOCAL_MODEL_CACHE_DIR:-./.model-cache}"
+
+repositories:
+  rootDir: "${REPOS_ROOT_DIR}"
+  include:
+    - "*"
+  exclude:
+    - "archived-*"
+    - ".*"
+  overrides: {}
+
+files:
+  include:
+    - "src/**/*"
+    - "lib/**/*"
+    - "app/**/*"
+    - "packages/**/*"
+  exclude:
+    - "**/node_modules/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/target/**"
+    - "**/.git/**"
+    - "**/*.test.ts"
+    - "**/*.spec.ts"
+    - "**/*.test.js"
+    - "**/*.spec.js"
+    - "**/__tests__/**"
+    - "**/*.min.js"
+    - "**/*.map"
+
+chunking:
+  maxTokens: 1000
+  overlap: 100
+
+server:
+  rest:
+    port: "${REST_PORT:-3000}"
+    enabled: true
+  mcp:
+    enabled: true
