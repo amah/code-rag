@@ -3,7 +3,9 @@ import type { AppConfig } from "../config/schema.js";
 import { OpenSearchClient } from "../indexer/opensearch-client.js";
 import { EmbeddingService } from "../embeddings/embedding-service.js";
 import { SearchService } from "../search/search-service.js";
+import { RagService } from "../rag/rag-service.js";
 import { createSearchRouter } from "./routes/search.js";
+import { createRagRouter } from "./routes/rag.js";
 
 /**
  * Creates and configures the Express server
@@ -31,6 +33,18 @@ export async function createServer(config: AppConfig): Promise<Express> {
 
   const searchService = new SearchService(osClient, embeddingService);
 
+  // Initialize RAG service if configured
+  let ragService: RagService | null = null;
+  if (config.rag) {
+    console.log(`Initializing RAG service (${config.rag.provider}/${config.rag.model})...`);
+    ragService = new RagService(config.rag, searchService);
+    if (ragService.isConfigured()) {
+      console.log("RAG service initialized");
+    } else {
+      console.log("RAG service initialized but API key not set - RAG queries disabled");
+    }
+  }
+
   // Health check endpoint
   app.get("/health", async (req: Request, res: Response) => {
     const osHealthy = await osClient.ping();
@@ -40,15 +54,18 @@ export async function createServer(config: AppConfig): Promise<Express> {
       services: {
         opensearch: osHealthy ? "connected" : "disconnected",
         embedding: embeddingService.providerName,
+        rag: ragService?.isConfigured() ? ragService.providerName : "not configured",
       },
     });
   });
 
   // API routes
   app.use("/api", createSearchRouter(searchService));
+  app.use("/api", createRagRouter(ragService));
 
   // Also mount at root for backwards compatibility
   app.use("/", createSearchRouter(searchService));
+  app.use("/", createRagRouter(ragService));
 
   return app;
 }
@@ -67,6 +84,8 @@ export async function startServer(config: AppConfig): Promise<void> {
     console.log(`  GET  /repositories    - List indexed repositories`);
     console.log(`  GET  /repositories/:repo/stats - Get repository stats`);
     console.log(`  GET  /file-chunks     - Get chunks for a file`);
+    console.log(`  POST /rag/query       - RAG query with AI response (streaming)`);
+    console.log(`  GET  /rag/status      - RAG service status`);
     console.log(`  GET  /health          - Health check`);
   });
 }

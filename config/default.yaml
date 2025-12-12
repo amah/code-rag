@@ -1,28 +1,33 @@
 opensearch:
-  url: "${OPENSEARCH_URL:-https://localhost:9200}"
+  url: "${OPENSEARCH_URL:-http://localhost:9200}"
   index: "${OPENSEARCH_INDEX:-code_chunks}"
   auth:
     username: "${OPENSEARCH_USERNAME:-admin}"
     password: "${OPENSEARCH_PASSWORD:-admin}"
 
 embedding:
+  # Provider: local (default), openai, azure
+  # Use "local" for offline/air-gapped environments (no external API calls)
   provider: "${EMBEDDING_PROVIDER:-local}"
 
-  openai:
-    apiKey: "${OPENAI_API_KEY:-placeholder}"
-    baseUrl: "${OPENAI_BASE_URL:-https://api.openai.com/v1}"
-    model: "${OPENAI_MODEL:-text-embedding-ada-002}"
-    dimension: 1536
-    batchSize: 100
+  # OpenAI embedding (requires OPENAI_API_KEY)
+  # openai:
+  #   apiKey: "${OPENAI_API_KEY}"
+  #   baseUrl: "${OPENAI_BASE_URL:-https://api.openai.com/v1}"
+  #   model: "${OPENAI_MODEL:-text-embedding-ada-002}"
+  #   dimension: 1536
+  #   batchSize: 100
 
-  azure:
-    apiKey: "${AZURE_OPENAI_API_KEY:-placeholder}"
-    endpoint: "${AZURE_OPENAI_ENDPOINT:-https://placeholder.openai.azure.com}"
-    deployment: "${AZURE_OPENAI_DEPLOYMENT:-placeholder}"
-    apiVersion: "${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}"
-    dimension: 1536
-    batchSize: 100
+  # Azure OpenAI embedding (requires AZURE_OPENAI_API_KEY)
+  # azure:
+  #   apiKey: "${AZURE_OPENAI_API_KEY}"
+  #   endpoint: "${AZURE_OPENAI_ENDPOINT}"
+  #   deployment: "${AZURE_OPENAI_DEPLOYMENT}"
+  #   apiVersion: "${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}"
+  #   dimension: 1536
+  #   batchSize: 100
 
+  # Local embedding model (default - no external API calls)
   local:
     model: "${LOCAL_MODEL_NAME:-Xenova/all-MiniLM-L6-v2}"
     dimension: 384
@@ -68,3 +73,33 @@ server:
     enabled: true
   mcp:
     enabled: true
+
+rag:
+  # Provider: ollama (local), openai-compatible (self-hosted), openrouter, openai
+  # Use "ollama" for local/offline usage (no external API calls)
+  # IMPORTANT: Set RAG_PROVIDER environment variable to enable RAG features
+  provider: "${RAG_PROVIDER:-ollama}"
+  model: "${RAG_MODEL:-llama3.2}"
+  maxTokens: 4096
+  topK: 10
+  minScore: 0.5
+
+  # Ollama - local LLM (default, no API key needed)
+  # Requires Ollama to be running: https://ollama.ai
+  ollama:
+    baseUrl: "${OLLAMA_BASE_URL:-http://localhost:11434/v1}"
+
+  # OpenAI-compatible endpoint (for self-hosted vLLM, llama.cpp, text-generation-inference, etc.)
+  # openai-compatible:
+  #   apiKey: "${OPENAI_COMPATIBLE_API_KEY}"
+  #   baseUrl: "${OPENAI_COMPATIBLE_BASE_URL:-http://localhost:8000/v1}"
+
+  # OpenRouter (online - requires OPENROUTER_API_KEY)
+  # openrouter:
+  #   apiKey: "${OPENROUTER_API_KEY}"
+  #   baseUrl: "https://openrouter.ai/api/v1"
+
+  # OpenAI (online - requires OPENAI_API_KEY)
+  # openai:
+  #   apiKey: "${OPENAI_API_KEY}"
+  #   baseUrl: "${OPENAI_BASE_URL:-https://api.openai.com/v1}"

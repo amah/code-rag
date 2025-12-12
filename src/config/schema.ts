@@ -72,6 +72,23 @@ export const ServerConfigSchema = z.object({
   }),
 });
 
+export const RagProviderConfigSchema = z.object({
+  apiKey: z.string().default(""),
+  baseUrl: z.string().optional(),
+});
+
+export const RagConfigSchema = z.object({
+  provider: z.enum(["ollama", "openai-compatible", "openrouter", "openai"]).default("ollama"),
+  model: z.string().default("llama3.2"),
+  maxTokens: z.number().default(4096),
+  topK: z.number().default(10),
+  minScore: z.number().default(0.5),
+  ollama: RagProviderConfigSchema.optional(),
+  "openai-compatible": RagProviderConfigSchema.optional(),
+  openrouter: RagProviderConfigSchema.optional(),
+  openai: RagProviderConfigSchema.optional(),
+});
+
 export const AppConfigSchema = z.object({
   opensearch: OpenSearchConfigSchema,
   embedding: EmbeddingConfigSchema,
@@ -79,6 +96,7 @@ export const AppConfigSchema = z.object({
   files: FilesConfigSchema,
   chunking: ChunkingConfigSchema,
   server: ServerConfigSchema,
+  rag: RagConfigSchema.optional(),
 });
 
 export type OpenSearchConfig = z.infer<typeof OpenSearchConfigSchema>;
@@ -91,4 +109,6 @@ export type RepositoriesConfig = z.infer<typeof RepositoriesConfigSchema>;
 export type FilesConfig = z.infer<typeof FilesConfigSchema>;
 export type ChunkingConfig = z.infer<typeof ChunkingConfigSchema>;
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;
+export type RagProviderConfig = z.infer<typeof RagProviderConfigSchema>;
+export type RagConfig = z.infer<typeof RagConfigSchema>;
 export type AppConfig = z.infer<typeof AppConfigSchema>;
