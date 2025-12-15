@@ -1,0 +1,105 @@
+# Code RAG Configuration Example
+# Copy this file to config.yaml and update the values
+
+# OpenSearch connection settings
+opensearch:
+  url: http://localhost:9200
+  index: code_chunks
+  auth:
+    username: admin
+    password: admin
+
+# Embedding configuration
+embedding:
+  # Provider: "openai", "azure", or "local"
+  provider: local
+
+  # Local embedding (no API key required, runs on CPU)
+  local:
+    model: Xenova/all-MiniLM-L6-v2
+    dimension: 384
+    batchSize: 32
+    cacheDir: ./.model-cache
+
+  # OpenAI embedding (uncomment and configure if using openai provider)
+  # openai:
+  #   apiKey: sk-your-openai-api-key
+  #   baseUrl: https://api.openai.com/v1
+  #   model: text-embedding-ada-002
+  #   dimension: 1536
+  #   batchSize: 100
+
+  # Azure OpenAI embedding (uncomment and configure if using azure provider)
+  # azure:
+  #   apiKey: your-azure-api-key
+  #   endpoint: https://your-resource.openai.azure.com
+  #   deployment: your-embedding-deployment
+  #   apiVersion: 2024-02-15-preview
+  #   dimension: 1536
+  #   batchSize: 100
+
+# Repository settings
+repositories:
+  # Root directory containing repositories to index
+  rootDir: ./repos
+  # Include patterns (glob)
+  include:
+    - "*"
+  # Exclude patterns (glob)
+  exclude: []
+  # Per-repository overrides
+  overrides: {}
+    # my-repo:
+    #   microservice: my-service
+    #   tags:
+    #     - backend
+    #     - api
+
+# File patterns to include/exclude
+files:
+  include:
+    - "src/**/*"
+    - "lib/**/*"
+    - "app/**/*"
+  exclude:
+    - "**/node_modules/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/.git/**"
+    - "**/vendor/**"
+
+# Chunking configuration
+chunking:
+  maxTokens: 1000
+  overlap: 100
+
+# Server configuration
+server:
+  rest:
+    port: 3000
+    enabled: true
+  mcp:
+    enabled: true
+
+# RAG (Retrieval-Augmented Generation) configuration
+rag:
+  # Provider: "ollama", "openai-compatible", "openrouter", or "openai"
+  provider: ollama
+  model: llama3.2
+  maxTokens: 4096
+  topK: 10
+  minScore: 0.5
+
+  # Ollama settings (local LLM)
+  ollama:
+    apiKey: ""
+    baseUrl: http://localhost:11434/v1
+
+  # OpenAI settings (uncomment if using openai provider)
+  # openai:
+  #   apiKey: sk-your-openai-api-key
+
+  # OpenRouter settings (uncomment if using openrouter provider)
+  # openrouter:
+  #   apiKey: your-openrouter-api-key
+  #   baseUrl: https://openrouter.ai/api/v1

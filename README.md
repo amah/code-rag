@@ -1,5 +1,8 @@
 # Code RAG
 
+[![CI](https://github.com/YOUR_USERNAME/code-rag/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/code-rag/actions/workflows/ci.yml)
+[![Release](https://github.com/YOUR_USERNAME/code-rag/actions/workflows/release.yml/badge.svg)](https://github.com/YOUR_USERNAME/code-rag/releases)
+
 Semantic code search and RAG (Retrieval-Augmented Generation) system for source code using OpenSearch k-NN vector search.
 
 ## Features
@@ -16,6 +19,37 @@ Semantic code search and RAG (Retrieval-Augmented Generation) system for source 
 - [Bun](https://bun.sh) runtime
 - [Docker](https://www.docker.com/) (for OpenSearch)
 - [Ollama](https://ollama.ai) (optional, for local RAG)
+
+## Installation
+
+### Option 1: Download Release Package
+
+Download the latest release from [Releases](https://github.com/YOUR_USERNAME/code-rag/releases):
+
+```bash
+# Download and extract
+wget https://github.com/YOUR_USERNAME/code-rag/releases/latest/download/code-rag-vX.X.X.tar.gz
+tar -xzf code-rag-vX.X.X.tar.gz
+cd code-rag-vX.X.X
+
+# Configure
+cp config.example.yaml config.yaml
+# Edit config.yaml with your settings
+
+# Run (all scripts support --config option)
+./setup-index.sh --config config.yaml    # Create OpenSearch index
+./ingest.sh --config config.yaml         # Index your repositories
+./start.sh --config config.yaml          # Start the server
+```
+
+### Option 2: Clone Repository
+
+```bash
+git clone https://github.com/YOUR_USERNAME/code-rag.git
+cd code-rag
+bun install
+cd ui && bun install && cd ..
+```
 
 ## Quick Start
 
@@ -63,10 +97,30 @@ bun run dev:ui
 
 ## Configuration
 
-Configuration is loaded from `config/default.yaml` by default. You can specify a custom config file:
+Configuration is loaded from `config/default.yaml` by default. All commands support the `--config` (or `-c`) option to specify a custom configuration file.
+
+### Using a Custom Config File
 
 ```bash
-bun run src/index.ts --config /path/to/config.yaml
+# REST API server
+bun run start --config /path/to/config.yaml
+
+# Setup index
+bun run setup-index --config /path/to/config.yaml
+
+# Ingest repositories
+bun run ingest --config /path/to/config.yaml
+
+# MCP server
+bun run start:mcp --config /path/to/config.yaml
+```
+
+### Creating a Config File
+
+Copy the example configuration file and customize it:
+
+```bash
+cp config.example.yaml config.yaml
 ```
 
 ### Environment Variables
@@ -130,9 +184,38 @@ RAG_PROVIDER=openai-compatible \
 | `bun run start:mcp` | Start MCP server |
 | `bun run setup-index` | Create OpenSearch index with mappings |
 | `bun run ingest` | Run ingestion pipeline |
-| `bun run ingest --repo <name>` | Index a specific repository |
-| `bun run ingest --dry-run` | Preview what would be indexed |
 | `bun run build:ui` | Build web UI for production |
+
+### Command Line Options
+
+All main commands support these options:
+
+```bash
+# Specify config file
+bun run start --config config.yaml
+bun run start -c config.yaml
+
+# Show help
+bun run start --help
+bun run setup-index --help
+bun run ingest --help
+```
+
+### Ingestion Options
+
+```bash
+bun run ingest --config config.yaml     # Use custom config
+bun run ingest --repo <name>            # Index a specific repository
+bun run ingest --dry-run                # Preview what would be indexed
+```
+
+### Setup Index Options
+
+```bash
+bun run setup-index --config config.yaml  # Use custom config
+bun run setup-index --force               # Force recreate the index
+bun run setup-index -f                    # Short form for --force
+```
 
 ## API Endpoints
 
@@ -155,7 +238,7 @@ The MCP server can be used with Claude Code or other MCP-compatible tools:
   "mcpServers": {
     "code-rag": {
       "command": "bun",
-      "args": ["run", "/path/to/code-rag/src/mcp-server.ts"],
+      "args": ["run", "/path/to/code-rag/src/mcp-server.ts", "--config", "/path/to/config.yaml"],
       "env": {
         "OPENSEARCH_URL": "http://localhost:9200",
         "REPOS_ROOT_DIR": "/path/to/repos"
@@ -192,7 +275,12 @@ rag:
 Then run with:
 
 ```bash
-bun run src/index.ts --config config/production.yaml
+# Setup and ingest with custom config
+bun run setup-index --config config/production.yaml
+bun run ingest --config config/production.yaml
+
+# Start server with custom config
+bun run start --config config/production.yaml
 ```
 
 ## Architecture
@@ -213,6 +301,20 @@ code-rag/
 │   └── scripts/        # CLI scripts
 └── ui/                 # React web interface
 ```
+
+## Creating a Release
+
+To create a new release, push a tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This will trigger the release workflow which:
+1. Builds and tests the code
+2. Creates distributable packages (`.zip` and `.tar.gz`)
+3. Publishes a GitHub Release with the packages attached
 
 ## License
 

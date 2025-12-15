@@ -2,15 +2,49 @@
 /**
  * Script to create/recreate the OpenSearch index for code chunks
  */
+import { parseArgs } from "util";
 import { getConfig, getEmbeddingDimension } from "../config/index.js";
 import { OpenSearchClient } from "../indexer/opensearch-client.js";
 
+function printHelp() {
+  console.log(`
+Code RAG Index Setup
+
+Usage:
+  bun run setup-index [options]
+
+Options:
+  -c, --config <path>  Path to configuration file (default: config/default.yaml)
+  -f, --force          Force recreate the index if it exists
+  -h, --help           Show this help message
+
+Examples:
+  bun run setup-index                        # Create index
+  bun run setup-index --force                # Recreate index
+  bun run setup-index --config config.yaml   # Use custom config
+`);
+}
+
 async function main() {
-  const args = process.argv.slice(2);
-  const forceRecreate = args.includes("--force") || args.includes("-f");
+  // Parse arguments
+  const { values } = parseArgs({
+    args: process.argv.slice(2),
+    options: {
+      config: { type: "string", short: "c" },
+      force: { type: "boolean", short: "f", default: false },
+      help: { type: "boolean", short: "h", default: false },
+    },
+  });
+
+  if (values.help) {
+    printHelp();
+    process.exit(0);
+  }
+
+  const forceRecreate = values.force;
 
   console.log("Loading configuration...");
-  const config = getConfig();
+  const config = getConfig(values.config);
 
   console.log(`Connecting to OpenSearch at ${config.opensearch.url}...`);
   const client = new OpenSearchClient(config.opensearch);

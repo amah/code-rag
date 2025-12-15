@@ -1,0 +1,160 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install UI dependencies
+        run: cd ui && bun install --frozen-lockfile
+
+      - name: Build UI
+        run: bun run build:ui
+
+      - name: Run tests
+        run: bun test
+        continue-on-error: true
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create distribution package
+        run: |
+          mkdir -p dist/code-rag-${{ steps.version.outputs.VERSION }}
+
+          # Copy source files
+          cp -r src dist/code-rag-${{ steps.version.outputs.VERSION }}/
+          cp -r ui/dist dist/code-rag-${{ steps.version.outputs.VERSION }}/ui-dist 2>/dev/null || true
+
+          # Copy config files
+          cp package.json dist/code-rag-${{ steps.version.outputs.VERSION }}/
+          cp bun.lockb dist/code-rag-${{ steps.version.outputs.VERSION }}/ 2>/dev/null || true
+          cp config.yaml dist/code-rag-${{ steps.version.outputs.VERSION }}/ 2>/dev/null || true
+          cp config.example.yaml dist/code-rag-${{ steps.version.outputs.VERSION }}/ 2>/dev/null || true
+
+          # Copy documentation
+          cp README.md dist/code-rag-${{ steps.version.outputs.VERSION }}/ 2>/dev/null || true
+          cp LICENSE dist/code-rag-${{ steps.version.outputs.VERSION }}/ 2>/dev/null || true
+
+          # Create startup scripts
+          cat > dist/code-rag-${{ steps.version.outputs.VERSION }}/start.sh << 'EOF'
+          #!/bin/bash
+          set -e
+
+          echo "=== Code RAG ==="
+          echo ""
+
+          # Check if bun is installed
+          if ! command -v bun &> /dev/null; then
+              echo "Error: Bun is not installed."
+              echo "Please install Bun first: curl -fsSL https://bun.sh/install | bash"
+              exit 1
+          fi
+
+          # Check if dependencies are installed
+          if [ ! -d "node_modules" ]; then
+              echo "Installing dependencies..."
+              bun install --frozen-lockfile
+          fi
+
+          echo "Starting Code RAG server..."
+          bun run start "$@"
+          EOF
+
+          cat > dist/code-rag-${{ steps.version.outputs.VERSION }}/setup-index.sh << 'EOF'
+          #!/bin/bash
+          set -e
+
+          echo "=== Code RAG - Setup Index ==="
+
+          if ! command -v bun &> /dev/null; then
+              echo "Error: Bun is not installed."
+              exit 1
+          fi
+
+          if [ ! -d "node_modules" ]; then
+              echo "Installing dependencies..."
+              bun install --frozen-lockfile
+          fi
+
+          bun run setup-index "$@"
+          EOF
+
+          cat > dist/code-rag-${{ steps.version.outputs.VERSION }}/ingest.sh << 'EOF'
+          #!/bin/bash
+          set -e
+
+          echo "=== Code RAG - Ingest ==="
+
+          if ! command -v bun &> /dev/null; then
+              echo "Error: Bun is not installed."
+              exit 1
+          fi
+
+          if [ ! -d "node_modules" ]; then
+              echo "Installing dependencies..."
+              bun install --frozen-lockfile
+          fi
+
+          bun run ingest "$@"
+          EOF
+
+          # Make scripts executable
+          chmod +x dist/code-rag-${{ steps.version.outputs.VERSION }}/*.sh
+
+          # Create zip archive
+          cd dist
+          zip -r code-rag-${{ steps.version.outputs.VERSION }}.zip code-rag-${{ steps.version.outputs.VERSION }}
+
+          # Create tarball
+          tar -czvf code-rag-${{ steps.version.outputs.VERSION }}.tar.gz code-rag-${{ steps.version.outputs.VERSION }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Code RAG ${{ steps.version.outputs.VERSION }}
+          body: |
+            ## Code RAG ${{ steps.version.outputs.VERSION }}
+
+            ### Prerequisites
+            - [Bun](https://bun.sh) runtime installed
+            - OpenSearch instance running
+
+            ### Quick Start
+            1. Download and extract the package
+            2. Copy `config.example.yaml` to `config.yaml` and configure your settings
+            3. Run `./setup-index.sh --config config.yaml` to create the OpenSearch index
+            4. Run `./ingest.sh --config config.yaml` to index your repositories
+            5. Run `./start.sh --config config.yaml` to start the server
+
+            ### Configuration
+            All scripts support the `--config <path>` option to specify a custom configuration file.
+
+            ### Files
+            - `code-rag-${{ steps.version.outputs.VERSION }}.zip` - Zip archive
+            - `code-rag-${{ steps.version.outputs.VERSION }}.tar.gz` - Tarball archive
+          files: |
+            dist/code-rag-${{ steps.version.outputs.VERSION }}.zip
+            dist/code-rag-${{ steps.version.outputs.VERSION }}.tar.gz
+          draft: false
+          prerelease: false
