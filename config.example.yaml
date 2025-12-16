@@ -17,6 +17,7 @@ embedding:
   # Local embedding (no API key required, runs on CPU)
   local:
     model: Xenova/all-MiniLM-L6-v2
+    # localModelPath: /path/to/local/models  # Optional: path to pre-downloaded models
     dimension: 384
     batchSize: 32
     cacheDir: ./.model-cache

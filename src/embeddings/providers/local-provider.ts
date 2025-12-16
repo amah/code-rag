@@ -16,6 +16,7 @@ export class LocalProvider implements EmbeddingProvider {
   readonly dimension: number;
 
   private model: string;
+  private localModelPath?: string;
   private batchSize: number;
   private cacheDir: string;
   private extractor: any = null;
@@ -23,6 +24,7 @@ export class LocalProvider implements EmbeddingProvider {
   constructor(config: LocalEmbeddingConfig) {
     this.dimension = config.dimension;
     this.model = config.model;
+    this.localModelPath = config.localModelPath;
     this.batchSize = config.batchSize;
     this.cacheDir = config.cacheDir;
   }
@@ -36,8 +38,14 @@ export class LocalProvider implements EmbeddingProvider {
     // Configure cache directory
     env.cacheDir = this.cacheDir;
 
-    // Disable local model check to always use cache
+    // Enable local models
     env.allowLocalModels = true;
+
+    // Set local model path if specified
+    if (this.localModelPath) {
+      env.localModelPath = this.localModelPath;
+      console.log(`Using local model path: ${this.localModelPath}`);
+    }
 
     console.log(`Loading local embedding model: ${this.model}...`);
 

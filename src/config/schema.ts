@@ -28,6 +28,7 @@ export const AzureEmbeddingConfigSchema = z.object({
 
 export const LocalEmbeddingConfigSchema = z.object({
   model: z.string().default("Xenova/all-MiniLM-L6-v2"),
+  localModelPath: z.string().optional(),
   dimension: z.number().default(384),
   batchSize: z.number().default(32),
   cacheDir: z.string().default("./.model-cache"),
