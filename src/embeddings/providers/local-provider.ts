@@ -1,7 +1,7 @@
 import type { LocalEmbeddingConfig } from "../../config/schema.js";
 import { type EmbeddingProvider, truncateToTokenLimit } from "./base-provider.js";
 
-// Dynamic import for transformers.js
+// Dynamic import for @huggingface/transformers
 let pipeline: any;
 let env: any;
 
@@ -31,7 +31,7 @@ export class LocalProvider implements EmbeddingProvider {
 
   async initialize(): Promise<void> {
     // Dynamic import to avoid loading transformers.js when not needed
-    const transformers = await import("@xenova/transformers");
+    const transformers = await import("@huggingface/transformers");
     pipeline = transformers.pipeline;
     env = transformers.env;
 
