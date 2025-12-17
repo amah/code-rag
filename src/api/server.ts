@@ -1,4 +1,6 @@
 import express, { type Express, type Request, type Response } from "express";
+import { existsSync } from "fs";
+import { resolve } from "path";
 import type { AppConfig } from "../config/schema.js";
 import { OpenSearchClient } from "../indexer/opensearch-client.js";
 import { EmbeddingService } from "../embeddings/embedding-service.js";
@@ -6,6 +8,12 @@ import { SearchService } from "../search/search-service.js";
 import { RagService } from "../rag/rag-service.js";
 import { createSearchRouter } from "./routes/search.js";
 import { createRagRouter } from "./routes/rag.js";
+
+// Possible UI dist locations
+const uiDistPaths = [
+  resolve(process.cwd(), "ui-dist"),      // Release package location
+  resolve(process.cwd(), "ui", "dist"),   // Development location
+];
 
 /**
  * Creates and configures the Express server
@@ -67,6 +75,20 @@ export async function createServer(config: AppConfig): Promise<Express> {
   app.use("/", createSearchRouter(searchService));
   app.use("/", createRagRouter(ragService));
 
+  // Serve static UI files if available
+  for (const uiPath of uiDistPaths) {
+    if (existsSync(uiPath)) {
+      console.log(`Serving UI from ${uiPath}`);
+      app.use(express.static(uiPath));
+
+      // Fallback to index.html for SPA routing
+      app.get("*", (req: Request, res: Response) => {
+        res.sendFile(resolve(uiPath, "index.html"));
+      });
+      break;
+    }
+  }
+
   return app;
 }
 
@@ -77,9 +99,15 @@ export async function startServer(config: AppConfig): Promise<void> {
   const app = await createServer(config);
   const port = config.server.rest.port;
 
+  // Check if UI is available
+  const uiAvailable = uiDistPaths.some(p => existsSync(p));
+
   app.listen(port, () => {
     console.log(`\nCode RAG API server running on http://localhost:${port}`);
-    console.log(`\nEndpoints:`);
+    if (uiAvailable) {
+      console.log(`UI available at http://localhost:${port}`);
+    }
+    console.log(`\nAPI Endpoints:`);
     console.log(`  POST /search-code     - Search for code`);
     console.log(`  GET  /repositories    - List indexed repositories`);
     console.log(`  GET  /repositories/:repo/stats - Get repository stats`);
