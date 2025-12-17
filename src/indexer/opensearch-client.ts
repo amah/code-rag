@@ -114,7 +114,7 @@ export class OpenSearchClient {
             method: {
               name: "hnsw",
               space_type: "cosinesimil",
-              engine: "nmslib",
+              engine: "lucene",
             },
           },
         },
