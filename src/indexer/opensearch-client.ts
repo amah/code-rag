@@ -78,9 +78,6 @@ export class OpenSearchClient {
       settings: {
         index: {
           knn: true,
-          "knn.algo_param.ef_search": 256,
-          "knn.algo_param.ef_construction": 512,
-          "knn.algo_param.m": 16,
         },
       },
       mappings: {
