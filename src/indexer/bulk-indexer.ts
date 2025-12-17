@@ -74,7 +74,7 @@ export class BulkIndexer {
     for (let i = 0; i < chunksWithEmbeddings.length; i += this.batchSize) {
       const batch = chunksWithEmbeddings.slice(i, i + this.batchSize);
 
-      const result = await this.client.bulkIndex(batch);
+      const result = await this.client.bulkIndex(batch as any);
       totalSuccessful += result.successful;
       totalFailed += result.failed;
       allErrors.push(...result.errors);

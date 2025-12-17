@@ -6,7 +6,7 @@ export const OpenSearchConfigSchema = z.object({
   auth: z.object({
     username: z.string(),
     password: z.string(),
-  }),
+  }).optional(),
 });
 
 export const OpenAIEmbeddingConfigSchema = z.object({

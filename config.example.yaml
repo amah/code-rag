@@ -5,9 +5,10 @@
 opensearch:
   url: http://localhost:9200
   index: code_chunks
-  auth:
-    username: admin
-    password: admin
+  # auth is optional - omit for OpenSearch without security
+  # auth:
+  #   username: admin
+  #   password: admin
 
 # Embedding configuration
 embedding:

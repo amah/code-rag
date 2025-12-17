@@ -11,19 +11,23 @@ export class OpenSearchClient {
   constructor(config: OpenSearchConfig) {
     this.indexName = config.index;
 
-    // Parse URL for auth
-    const url = new URL(config.url);
-
-    this.client = new Client({
+    // Build client options
+    const clientOptions: any = {
       node: config.url,
-      auth: {
-        username: config.auth.username,
-        password: config.auth.password,
-      },
       ssl: {
         rejectUnauthorized: false, // Allow self-signed certs for dev
       },
-    });
+    };
+
+    // Only add auth if credentials are provided
+    if (config.auth) {
+      clientOptions.auth = {
+        username: config.auth.username,
+        password: config.auth.password,
+      };
+    }
+
+    this.client = new Client(clientOptions);
   }
 
   /**
@@ -119,7 +123,7 @@ export class OpenSearchClient {
 
     await this.client.indices.create({
       index: this.indexName,
-      body: indexBody,
+      body: indexBody as any,
     });
   }
 
@@ -185,13 +189,13 @@ export class OpenSearchClient {
       },
     });
 
+    const hits = response.body.hits?.hits || [];
+    const total = response.body.hits?.total;
+
     return {
-      hits: response.body.hits.hits,
-      total:
-        typeof response.body.hits.total === "number"
-          ? response.body.hits.total
-          : response.body.hits.total.value,
-      took: response.body.took,
+      hits: hits as any,
+      total: typeof total === "number" ? total : (total?.value ?? 0),
+      took: response.body.took ?? 0,
     };
   }
 
@@ -201,7 +205,7 @@ export class OpenSearchClient {
   async bulkIndex(
     documents: Array<{ id: string; [key: string]: unknown }>
   ): Promise<{ successful: number; failed: number; errors: string[] }> {
-    const body: unknown[] = [];
+    const body: Record<string, any>[] = [];
 
     for (const doc of documents) {
       body.push({
@@ -210,7 +214,7 @@ export class OpenSearchClient {
           _id: doc.id,
         },
       });
-      body.push(doc);
+      body.push(doc as Record<string, any>);
     }
 
     const response = await this.client.bulk({
@@ -222,7 +226,7 @@ export class OpenSearchClient {
     let failed = 0;
 
     if (response.body.errors) {
-      for (const item of response.body.items) {
+      for (const item of response.body.items || []) {
         if (item.index?.error) {
           failed++;
           errors.push(
@@ -283,19 +287,23 @@ export class OpenSearchClient {
     const byLanguage: Record<string, number> = {};
     const bySymbolType: Record<string, number> = {};
 
-    for (const bucket of response.body.aggregations.by_language.buckets) {
-      byLanguage[bucket.key] = bucket.doc_count;
+    const aggs = response.body.aggregations as any;
+    if (aggs?.by_language?.buckets) {
+      for (const bucket of aggs.by_language.buckets) {
+        byLanguage[bucket.key] = bucket.doc_count;
+      }
     }
 
-    for (const bucket of response.body.aggregations.by_symbol_type.buckets) {
-      bySymbolType[bucket.key] = bucket.doc_count;
+    if (aggs?.by_symbol_type?.buckets) {
+      for (const bucket of aggs.by_symbol_type.buckets) {
+        bySymbolType[bucket.key] = bucket.doc_count;
+      }
     }
+
+    const total = response.body.hits?.total;
 
     return {
-      total:
-        typeof response.body.hits.total === "number"
-          ? response.body.hits.total
-          : response.body.hits.total.value,
+      total: typeof total === "number" ? total : (total?.value ?? 0),
       byLanguage,
       bySymbolType,
     };
@@ -317,9 +325,8 @@ export class OpenSearchClient {
       },
     });
 
-    return response.body.aggregations.repos.buckets.map(
-      (b: { key: string }) => b.key
-    );
+    const aggs = response.body.aggregations as any;
+    return (aggs?.repos?.buckets || []).map((b: { key: string }) => b.key);
   }
 
   /**
@@ -345,9 +352,8 @@ export class OpenSearchClient {
       },
     });
 
-    return response.body.hits.hits.map(
-      (hit: { _source: Record<string, unknown> }) => hit._source
-    );
+    const hits = response.body.hits?.hits || [];
+    return hits.map((hit: any) => hit._source);
   }
 
   /**
@@ -363,7 +369,7 @@ export class OpenSearchClient {
       },
       refresh: true,
     });
-    return response.body.deleted;
+    return (response.body as any).deleted ?? 0;
   }
 
   /**
