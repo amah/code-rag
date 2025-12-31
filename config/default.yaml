@@ -66,6 +66,8 @@ files:
 chunking:
   maxTokens: 1000
   overlap: 100
+  # Set to true to embed entire files instead of parsing into semantic chunks
+  # wholeFile: false
 
 server:
   rest:

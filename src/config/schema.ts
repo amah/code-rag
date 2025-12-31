@@ -61,6 +61,7 @@ export const FilesConfigSchema = z.object({
 export const ChunkingConfigSchema = z.object({
   maxTokens: z.number().default(1000),
   overlap: z.number().default(100),
+  wholeFile: z.boolean().default(false),
 });
 
 export const ServerConfigSchema = z.object({

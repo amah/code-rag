@@ -21,10 +21,12 @@ export class Chunker {
   private parsers: Map<Language, Parser>;
   private maxTokens: number;
   private overlap: number;
+  private wholeFile: boolean;
 
   constructor(config: ChunkingConfig) {
     this.maxTokens = config.maxTokens;
     this.overlap = config.overlap;
+    this.wholeFile = config.wholeFile ?? false;
 
     // Initialize parsers
     this.parsers = new Map([
@@ -53,27 +55,32 @@ export class Chunker {
       return [];
     }
 
-    const parser = this.parsers.get(fileInfo.language);
-
     let symbols: ParsedSymbol[];
 
-    if (parser && supportsAstParsing(fileInfo.language)) {
-      // Use AST-based parsing
-      try {
+    // In whole-file mode, skip parsing and treat entire file as a single chunk
+    if (this.wholeFile) {
+      symbols = this.createFileSymbol(content, fileInfo);
+    } else {
+      const parser = this.parsers.get(fileInfo.language);
+
+      if (parser && supportsAstParsing(fileInfo.language)) {
+        // Use AST-based parsing
+        try {
+          symbols = await parser.parse(content, fileInfo.relativePath);
+        } catch (error) {
+          console.warn(
+            `Failed to parse ${fileInfo.relativePath} with AST parser, falling back to file chunk:`,
+            error
+          );
+          symbols = this.createFileSymbol(content, fileInfo);
+        }
+      } else if (parser) {
+        // Use non-AST parser (config, SQL)
         symbols = await parser.parse(content, fileInfo.relativePath);
-      } catch (error) {
-        console.warn(
-          `Failed to parse ${fileInfo.relativePath} with AST parser, falling back to file chunk:`,
-          error
-        );
+      } else {
+        // No parser available - create single file chunk
         symbols = this.createFileSymbol(content, fileInfo);
       }
-    } else if (parser) {
-      // Use non-AST parser (config, SQL)
-      symbols = await parser.parse(content, fileInfo.relativePath);
-    } else {
-      // No parser available - create single file chunk
-      symbols = this.createFileSymbol(content, fileInfo);
     }
 
     // Convert symbols to chunks
